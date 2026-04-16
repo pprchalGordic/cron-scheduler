@@ -65,7 +65,7 @@ func dpApiDecrypt(data []byte) ([]byte, error) {
 }
 
 func encryptInteractive() {
-	fmt.Print("Enter secret: ")
+	fmt.Print("Zadejte heslo: ")
 	var secret string
 	fmt.Scanln(&secret)
 

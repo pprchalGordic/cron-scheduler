@@ -12,13 +12,15 @@ import (
 
 func main() {
 	if len(os.Args) == 1 {
-		fmt.Println("process-cron nástroj")
-		fmt.Println("v: 1.0")
+		fmt.Println("cron-scheduler nástroj pro implementátory")
+		fmt.Println("v: 1.2")
 		fmt.Println()
 		fmt.Println("-cron vykoná sekvenci cron příkazů definovanou v config.yaml")
-		fmt.Println("\t určeno pro spouštění z Windows Task Scheduler, ale lze použít i ručně")
+		fmt.Println("\t určeno pro spouštění z Task Scheduler, ale lze použít i ručně")
 		fmt.Println("-encrypt zašifruje heslo do dpapi: tvaru")
-		fmt.Println("-decrypt rozšifruje dpapi:... hodnotu")
+		fmt.Println("-decrypt rozšifruje dpapi: hodnotu")
+		fmt.Println("-logrotate src dst")
+		fmt.Println("\t provede rotaci logů z adresáře src do dst - zipuje obsah src do dst/src.zip a smaže původní soubory")
 		return
 	}
 
@@ -31,6 +33,9 @@ func main() {
 		return
 	case "-cron":
 		cron()
+		return
+	case "-logrotate":
+		LogRotateStart(os.Args[1], os.Args[2])
 		return
 	}
 }
