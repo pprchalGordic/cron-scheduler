@@ -1,0 +1,9 @@
+jobs:
+  - name: Rotace logů  
+    run_at: "8:00"
+    command: logrotate C:\Log C:\LogArchive
+
+  - name: example
+    run_at: "23:00"
+    days: [Mon, Tue, Wed, Thu, Fri]
+    command: "-NoProfile -File jobs\example.ps1"
