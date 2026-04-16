@@ -13,7 +13,7 @@ import (
 func main() {
 	if len(os.Args) == 1 {
 		fmt.Println("cron-scheduler nástroj pro implementátory")
-		fmt.Println("v: 1.2")
+		fmt.Println("v: 1.3")
 		fmt.Println()
 		fmt.Println("-cron vykoná sekvenci cron příkazů definovanou v config.yaml")
 		fmt.Println("\t určeno pro spouštění z Task Scheduler, ale lze použít i ručně")
@@ -29,7 +29,11 @@ func main() {
 		encryptInteractive()
 		return
 	case "-decrypt":
-		decryptInteractive()
+		path := ""
+		if len(os.Args) > 2 {
+			path = os.Args[2]
+		}
+		decryptInteractive(path)
 		return
 	case "-cron":
 		cron()

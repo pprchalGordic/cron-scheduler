@@ -64,10 +64,61 @@ func dpApiDecrypt(data []byte) ([]byte, error) {
 	return result, nil
 }
 
+func readPassword() string {
+	kernel32 := syscall.NewLazyDLL("kernel32.dll")
+	getConsoleMode := kernel32.NewProc("GetConsoleMode")
+	setConsoleMode := kernel32.NewProc("SetConsoleMode")
+	readConsoleInput := kernel32.NewProc("ReadConsoleInputW")
+
+	handle, _ := syscall.GetStdHandle(syscall.STD_INPUT_HANDLE)
+	var oldMode uint32
+	getConsoleMode.Call(uintptr(handle), uintptr(unsafe.Pointer(&oldMode)))
+	setConsoleMode.Call(uintptr(handle), 0) // disable all input processing
+
+	type inputRecord struct {
+		eventType uint16
+		_         uint16
+		keyDown   int32
+		repeat    uint16
+		vkCode    uint16
+		scanCode  uint16
+		char      uint16
+		state     uint32
+	}
+
+	var result []byte
+	for {
+		var rec inputRecord
+		var read uint32
+		readConsoleInput.Call(uintptr(handle), uintptr(unsafe.Pointer(&rec)), 1, uintptr(unsafe.Pointer(&read)))
+		if rec.eventType != 1 || rec.keyDown == 0 {
+			continue
+		}
+		ch := rec.char
+		if ch == 13 { // Enter
+			break
+		}
+		if ch == 8 { // Backspace
+			if len(result) > 0 {
+				result = result[:len(result)-1]
+				fmt.Print("\b \b")
+			}
+			continue
+		}
+		if ch >= 32 {
+			result = append(result, byte(ch))
+			fmt.Print("*")
+		}
+	}
+	fmt.Println()
+
+	setConsoleMode.Call(uintptr(handle), uintptr(oldMode))
+	return string(result)
+}
+
 func encryptInteractive() {
 	fmt.Print("Zadejte heslo: ")
-	var secret string
-	fmt.Scanln(&secret)
+	secret := readPassword()
 
 	encrypted, err := dpApiEncrypt([]byte(secret))
 	if err != nil {
@@ -79,10 +130,19 @@ func encryptInteractive() {
 	fmt.Println("dpapi:" + base64.StdEncoding.EncodeToString(encrypted))
 }
 
-func decryptInteractive() {
-	fmt.Print("Zadejte dpapi: ")
+func decryptInteractive(path string) {
 	var input string
-	fmt.Scanln(&input)
+	if path != "" {
+		content, err := os.ReadFile(path)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "nelze načíst soubor %s: %v\n", path, err)
+			os.Exit(1)
+		}
+		input = strings.TrimSpace(string(content))
+	} else {
+		fmt.Print("Zadejte dpapi: ")
+		fmt.Scanln(&input)
+	}
 
 	encoded := strings.TrimPrefix(input, "dpapi:")
 	data, err := base64.StdEncoding.DecodeString(encoded)
