@@ -11,27 +11,44 @@ import (
 )
 
 func main() {
-	if len(os.Args) > 1 {
-		fmt.Println("process-cron launcher")
-		fmt.Println("schedule in task manager, configure by schedule.yaml")
+	if len(os.Args) == 1 {
+		fmt.Println("process-cron nástroj")
+		fmt.Println("v: 1.0")
 		fmt.Println()
-		fmt.Println("runs every n minutes (30) recommended and executes scripts")
+		fmt.Println("-cron vykoná sekvenci cron příkazů definovanou v config.yaml")
+		fmt.Println("\t určeno pro spouštění z Windows Task Scheduler, ale lze použít i ručně")
+		fmt.Println("-encrypt zašifruje heslo do dpapi: tvaru")
+		fmt.Println("-decrypt rozšifruje dpapi:... hodnotu")
 		return
 	}
 
+	switch os.Args[1] {
+	case "-encrypt":
+		encryptInteractive()
+		return
+	case "-decrypt":
+		decryptInteractive()
+		return
+	case "-cron":
+		cron()
+		return
+	}
+}
+
+func cron() {
 	now := time.Now()
 	today := now.Format("2006-01-02")
 	dayName := now.Format("Mon")
 
-	data, err := os.ReadFile("schedule.yaml")
+	data, err := os.ReadFile("config.yaml")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to read schedule.yaml: %v\n", err)
+		fmt.Fprintf(os.Stderr, "nelze načíst config.yaml: %v\n", err)
 		os.Exit(1)
 	}
 
 	var config ConfigRoot
 	if err := yaml.Unmarshal(data, &config); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to parse schedule.yaml: %v\n", err)
+		fmt.Fprintf(os.Stderr, "chybný formát config.yaml: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -48,7 +65,7 @@ func main() {
 
 		runAt, err := time.Parse("15:04", job.RunAt)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "invalid run_at for job %s: %v\n", job.Name, err)
+			fmt.Fprintf(os.Stderr, "chybný run_at pro %s: %v\n", job.Name, err)
 			continue
 		}
 
@@ -76,7 +93,7 @@ func main() {
 
 			logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "failed to open log %s: %v\n", logPath, err)
+				fmt.Fprintf(os.Stderr, "nepodařilo se vytvořit log soubor %s: %v\n", logPath, err)
 				return
 			}
 			defer logFile.Close()

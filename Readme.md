@@ -1,4 +1,4 @@
-# Návod na použití Plánovače úloh
+# Návod na použití plánovače úloh
 
 ## Co to je
 Tato aplikace umožňuje automaticky spouštět různé úlohy (skripty) ve vámi zadaný čas a dny. Je to obdoba cron služby z Linuxu, ale pro Windows.
@@ -8,6 +8,7 @@ Tato aplikace umožňuje automaticky spouštět různé úlohy (skripty) ve vám
 - Zkontroluje, zda má nějakou úlohu spustit v aktuální čas
 - Spustí úlohu pouze jednou za den (i když se aplikace spustí vícekrát)
 - Uloží výstup každé úlohy do logu
+- Navíc: můžete použít -encrypt a -decrypt pro práci s DPAPI
 
 
 ## Nastavení konfigurace
