@@ -35,7 +35,7 @@ func main() {
 		cron()
 		return
 	case "-logrotate":
-		LogRotateStart(os.Args[1], os.Args[2])
+		LogRotateStart(os.Args[2], os.Args[3])
 		return
 	}
 }
