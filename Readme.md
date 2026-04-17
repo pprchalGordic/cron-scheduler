@@ -1,18 +1,24 @@
 # Návod na použití plánovače úloh
 
 ## Co to je
-Tato aplikace umožňuje automaticky spouštět různé úlohy (skripty) ve vámi zadaný čas a dny. Je to obdoba cron služby z Linuxu, ale pro Windows.
+Pomocná aplikace při implementace be-databázových GINIS modulů (APG/DKS/AIB).
+Umožňuje automaticky spouštět různé úlohy (skripty) ve vámi zadaný čas a dny. Je to obdoba cron služby z Linuxu, ale pro Windows.
+
+Umožní přenést konfiguraci více naplánovaných úloh v jediném souboru.
+Časová přesnost není pro velké systémy důležitá, postačuje spustit v dobu, kdy je malé zatížení (například v 3:00 ráno).
 
 ## Jak to funguje
-- Aplikace se spouští v pravidelných intervalech (doporučuje se každých 30 minut)
-- Zkontroluje, zda má nějakou úlohu spustit v aktuální čas
-- Spustí úlohu pouze jednou za den (i když se aplikace spustí vícekrát)
-- Uloží výstup každé úlohy do logu
-- Navíc: můžete použít -encrypt a -decrypt pro práci s DPAPI
+- `-cron` aplikace se spouští v pravidelných intervalech (doporučuje se každých 30 minut přes TaskManager)
+- `-encrypt` zašifruje heslo do `dpapi:tvaru`
+- `-decrypt` rozšifruje heslo z `dpapi:tvaru`
+- `-logrotate` provede archivaci složek logů
 
+## -cron
+1) zkontroluje, zda má nějakou úlohu spustit v aktuální čas
+2) spustí úlohu pouze jednou za den (i když se aplikace spustí vícekrát)
+3) uloží výstup každé úlohy do logu
 
-## Nastavení konfigurace
-Vytvořte nebo upravte soubor `schedule.yaml` (nebo `config.yaml`) podle vzoru:
+Vytvořte nebo upravte soubor `config.yaml` podle vzoru:
 
 ```yaml
 jobs:
@@ -22,38 +28,39 @@ jobs:
 
   - name: Zálohování
     run_at: "23:00"
-    days: [Mon, Tue, Wed, Thu, Fri]
+    days: [1, 2, 3, 4, 5]
     command: "-NoProfile -File C:\Scripts\backup.ps1"
 ```
 
-## Nastavení úloh
-
-### Parametry úlohy:
+### Popis parametrů:
 - **name**: Název úlohy (pro rozpoznání v lozích)
 - **run_at**: Čas spuštění ve formátu "HH:MM" (např. "08:30", "23:15")
 - **days**: Dny spuštění (nepovinné)
-  - Možné hodnoty: Mon, Tue, Wed, Thu, Fri, Sat, Sun
+  - Čísla 1–7, kde 1=Po, 2=Út, 3=St, 4=Čt, 5=Pá, 6=So, 7=Ne
   - Pokud není uvedeno, úloha se spustí každý den
 - **command**: Příkaz ke spuštění
 
-### Druhy příkazů:
+
+### Druhy příkazů `command`:
 
 #### PowerShell skripty:
 ```yaml
 command: "-NoProfile -File C:\Scripts\muj_skript.ps1"
 ```
 
-#### Rotace logů (speciální funkce):
+#### Rotace logů
+Automaticky zazipuje a přesune staré log složky.
+Zpracovává pouze složky starší než včerejšek.
+
+Může být 
+spuštěno i interaktivně (viz `-logrotate`)
+> Složky musí mít formát názvu: YYYY_MM_DD nebo YYYY-MM-DD
+
 ```yaml
 command: logrotate C:\SourceFolder C:\ArchiveFolder
 ```
-- Automaticky zazipuje a přesune staré log složky
-- Zpracovává pouze složky starší než včerejšek
-- Složky musí mít formát názvu: YYYY_MM_DD nebo YYYY-MM-DD
 
-## Nastavení ve Windows
-
-### Automatické spouštění přes Plánovač úloh Windows:
+## Automatické spouštění přes Plánovač úloh Windows:
 
 1. Otevřete **Task Scheduler** (Plánovač úloh)
 2. Klikněte na **"Create Basic Task"** (Vytvořit základní úlohu)
@@ -65,7 +72,7 @@ command: logrotate C:\SourceFolder C:\ArchiveFolder
 8. Argumenty: nechte prázdné
 9. Složka: cesta ke složce s aplikací
 10. V **pokročilých nastaveních**:
-    - Zaškrtněte "Repeat task every:" 30 minutes
+    - Zaškrtněte "Repeat task every:" 15 minutes
     - For a duration of: 1 day
 
 ## Složky a soubory
@@ -77,59 +84,40 @@ Po spuštění aplikace se vytvoří tyto složky a soubory:
 - **locks/**: Dočasné soubory zamykání (automaticky se mažou)
 - **state.json**: Sleduje, které úlohy už byly dnes spuštěny
 
-## Příklady použití
 
-### Denní zálohování dat:
-```yaml
-- name: Backup dat
-  run_at: "02:00"
-  command: "-NoProfile -File C:\Scripts\backup_data.ps1"
+## -encrypt
+Zašifruje heslo do `dpapi:tvaru` pro GINIS-vault. 
+
+## -decrypt
+Rozšifruje heslo z `dpapi:tvaru`.
+
+> buďte opatrní
+
+
+
+## Příklady
+### spustit naplánované úkoly
+```
+.\cron-scheduler.exe -cron
+
 ```
 
-### Úklid tempů pouze v pracovní dny:
-```yaml
-- name: Cleanup temp
-  run_at: "18:00"
-  days: [Mon, Tue, Wed, Thu, Fri]
-  command: "-NoProfile -File C:\Scripts\cleanup_temp.ps1"
+### zašifrovat heslo do trezoru
+```
+.\cron-scheduler.exe -encrypt
 ```
 
-### Rotace logů aplikace:
-```yaml
-- name: Rotace aplikačních logů
-  run_at: "01:00"
-  command: logrotate C:\AppLogs C:\LogArchive
+### rozšifrovat heslo z trezoru
+interaktivní způsob - zeptá se uživatele na `dpapi:tvar`
+> buďte opatrní
+```
+.\cron-scheduler.exe -decrypt
 ```
 
-## Řešení problémů
+### rozšifrovat heslo z trezoru na windows 2022
+v `cesta_k_souboru.txt` musí být zašifrované heslo v `dpapi:tvaru`
 
-### Aplikace se nespustí:
-- Zkontrolujte, že máte nainstalované Go
-- Zkompilujte znovu: `go build`
-
-### Úloha se nespustila:
-1. Zkontrolujte čas a formát v `run_at`
-2. Ověřte, že dny jsou správně zadané
-3. Podívejte se do logu úlohy v složce `logs/`
-
-### PowerShell skripty se nespouští:
-- Zkontrolujte cesty k souborům
-- Ujistěte se, že máte oprávnění ke spuštění skriptů
-- Otestujte skript ručně v PowerShellu
-
-### Rotace logů nefunguje:
-- Ověřte, že složky existují
-- Zkontrolujte, že source složky mají správný formát názvu (YYYY_MM_DD)
-- Ujistěte se, že máte práva k zápisu do cílové složky
-
-## Zobrazení výstupu
-
-Po spuštění aplikace bez parametrů se zobrazí nápověda:
+> buďte opatrní
 ```
-process-cron launcher
-schedule in task manager, configure by schedule.yaml
-
-runs every n minutes (30) recommended and executes scripts
+.\cron-scheduler.exe -decrypt cesta_k_souboru.txt
 ```
-
-Všechny výstupy úloh se ukládají do souborů v složce `logs/`.

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -47,7 +46,7 @@ func main() {
 func cron() {
 	now := time.Now()
 	today := now.Format("2006-01-02")
-	dayName := now.Format("Mon")
+	dayNum := (int(now.Weekday()) + 6) % 7 + 1 // 1=Po, 2=Út, ..., 7=Ne
 
 	data, err := os.ReadFile("config.yaml")
 	if err != nil {
@@ -68,7 +67,7 @@ func cron() {
 	}
 
 	for _, job := range config.Jobs {
-		if len(job.Days) > 0 && !contains(job.Days, dayName) {
+		if len(job.Days) > 0 && !containsInt(job.Days, dayNum) {
 			continue
 		}
 
@@ -116,9 +115,9 @@ func cron() {
 	os.WriteFile(statePath, stateJSON, 0644)
 }
 
-func contains(slice []string, val string) bool {
-	for _, s := range slice {
-		if strings.EqualFold(s, val) {
+func containsInt(slice []int, val int) bool {
+	for _, v := range slice {
+		if v == val {
 			return true
 		}
 	}

@@ -5,5 +5,5 @@ jobs:
 
   - name: example
     run_at: "23:00"
-    days: [Mon, Tue, Wed, Thu, Fri]
+    days: [1, 2, 3, 4, 5]
     command: "-NoProfile -File jobs\example.ps1"
