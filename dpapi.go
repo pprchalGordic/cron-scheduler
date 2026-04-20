@@ -15,6 +15,8 @@ var (
 	procCryptUnprotectData = crypt32.NewProc("CryptUnprotectData")
 )
 
+const cryptProtectLocalMachine = 0x4
+
 type dataBlob struct {
 	cbData uint32
 	pbData *byte
@@ -29,7 +31,7 @@ func dpApiEncrypt(data []byte) ([]byte, error) {
 
 	r, _, err := procCryptProtectData.Call(
 		uintptr(unsafe.Pointer(&input)),
-		0, 0, 0, 0, 0,
+		0, 0, 0, 0, cryptProtectLocalMachine,
 		uintptr(unsafe.Pointer(&output)),
 	)
 	if r == 0 {
@@ -51,7 +53,7 @@ func dpApiDecrypt(data []byte) ([]byte, error) {
 
 	r, _, err := procCryptUnprotectData.Call(
 		uintptr(unsafe.Pointer(&input)),
-		0, 0, 0, 0, 0,
+		0, 0, 0, 0, cryptProtectLocalMachine,
 		uintptr(unsafe.Pointer(&output)),
 	)
 	if r == 0 {
