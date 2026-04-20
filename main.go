@@ -12,7 +12,8 @@ import (
 func main() {
 	if len(os.Args) == 1 {
 		fmt.Println("cron-scheduler nástroj pro implementátory")
-		fmt.Println("v: 1.3")
+		fmt.Println("GORDIC, spol. s r.o. 2026")
+		fmt.Println("v: 1.4")
 		fmt.Println()
 		fmt.Println("-cron vykoná sekvenci cron příkazů definovanou v config.yaml")
 		fmt.Println("\t určeno pro spouštění z Task Scheduler, ale lze použít i ručně")
@@ -46,7 +47,7 @@ func main() {
 func cron() {
 	now := time.Now()
 	today := now.Format("2006-01-02")
-	dayNum := (int(now.Weekday()) + 6) % 7 + 1 // 1=Po, 2=Út, ..., 7=Ne
+	dayNum := (int(now.Weekday())+6)%7 + 1 // 1=Po, 2=Út, ..., 7=Ne
 
 	data, err := os.ReadFile("config.yaml")
 	if err != nil {

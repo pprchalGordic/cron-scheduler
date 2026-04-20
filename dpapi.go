@@ -70,57 +70,31 @@ func readPassword() string {
 	kernel32 := syscall.NewLazyDLL("kernel32.dll")
 	getConsoleMode := kernel32.NewProc("GetConsoleMode")
 	setConsoleMode := kernel32.NewProc("SetConsoleMode")
-	readConsoleInput := kernel32.NewProc("ReadConsoleInputW")
 
 	handle, _ := syscall.GetStdHandle(syscall.STD_INPUT_HANDLE)
 	var oldMode uint32
 	getConsoleMode.Call(uintptr(handle), uintptr(unsafe.Pointer(&oldMode)))
-	setConsoleMode.Call(uintptr(handle), 0) // disable all input processing
 
-	type inputRecord struct {
-		eventType uint16
-		_         uint16
-		keyDown   int32
-		repeat    uint16
-		vkCode    uint16
-		scanCode  uint16
-		char      uint16
-		state     uint32
-	}
+	const enableEchoInput = 0x0004
+	setConsoleMode.Call(uintptr(handle), uintptr(oldMode&^enableEchoInput))
 
-	var result []byte
-	for {
-		var rec inputRecord
-		var read uint32
-		readConsoleInput.Call(uintptr(handle), uintptr(unsafe.Pointer(&rec)), 1, uintptr(unsafe.Pointer(&read)))
-		if rec.eventType != 1 || rec.keyDown == 0 {
-			continue
-		}
-		ch := rec.char
-		if ch == 13 { // Enter
-			break
-		}
-		if ch == 8 { // Backspace
-			if len(result) > 0 {
-				result = result[:len(result)-1]
-				fmt.Print("\b \b")
-			}
-			continue
-		}
-		if ch >= 32 {
-			result = append(result, byte(ch))
-			fmt.Print("*")
-		}
-	}
+	var line string
+	fmt.Scanln(&line)
 	fmt.Println()
 
 	setConsoleMode.Call(uintptr(handle), uintptr(oldMode))
-	return string(result)
+	return line
 }
 
 func encryptInteractive() {
 	fmt.Print("Zadejte heslo: ")
 	secret := readPassword()
+
+	if len(secret) == 0 {
+		fmt.Fprintln(os.Stderr, "heslo nesmí být prázdné")
+		os.Exit(1)
+	}
+	fmt.Printf("Uživatel zadal heslo o délce %d znaků\n", len(secret))
 
 	encrypted, err := dpApiEncrypt([]byte(secret))
 	if err != nil {
